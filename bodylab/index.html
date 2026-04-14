@@ -178,10 +178,10 @@ function ApiKeyScreen({ onNext }) {
     if (!key.startsWith("sk-ant-")) { setError("APIキーは sk-ant- で始まります"); return; }
     setTesting(true); setError("");
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 10, messages: [{ role: "user", content: "hi" }] }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: key, system: "test", messages: [{ role: "user", content: "hi" }] }),
       });
       if (res.ok) { onNext(key); }
       else {
@@ -389,10 +389,10 @@ function Coach({ profile, msgs, setMsgs, apiKey, onReset, onExport }) {
     setMsgs(next);
     setBusy(true);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-        body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 1200, system: buildSystem(profile, activeMode || "coach"), messages: next }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey, system: buildSystem(profile, activeMode || "coach"), messages: next }),
       });
       const raw = await res.text();
       let data;

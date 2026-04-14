@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AI BODY LAB – 使い方ガイド</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Noto Sans JP','Hiragino Sans',sans-serif;background:#0c0618;color:#e2e8f0;line-height:1.7}
+  a{color:#a78bfa;text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  .hero{background:linear-gradient(160deg,#0c0618 0%,#1a0a36 50%,#0c0618 100%);padding:80px 24px 60px;text-align:center;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at center,rgba(167,139,250,0.08) 0%,transparent 60%);pointer-events:none}
+  .logo{display:inline-flex;align-items:center;gap:12px;margin-bottom:24px}
+  .logo-icon{width:48px;height:48px;background:linear-gradient(135deg,#a78bfa,#6366f1);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px}
+  .logo-text{text-align:left}
+  .logo-name{font-size:22px;font-weight:900;letter-spacing:-0.02em}
+  .logo-sub{font-size:11px;color:#a78bfa;letter-spacing:0.12em;font-weight:700}
+  h1{font-size:clamp(28px,5vw,48px);font-weight:900;line-height:1.2;margin-bottom:16px}
+  .grad{background:linear-gradient(90deg,#a78bfa,#6366f1,#a78bfa);background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shift 4s linear infinite}
+  @keyframes shift{0%{background-position:0%}100%{background-position:200%}}
+  .hero p{color:#64748b;font-size:16px;max-width:540px;margin:0 auto 32px}
+  .cta{display:inline-block;background:linear-gradient(135deg,#a78bfa,#6366f1);color:#fff;padding:16px 36px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;text-decoration:none;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 4px 24px rgba(167,139,250,0.3)}
+  .cta:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(167,139,250,0.4);text-decoration:none}
+  .free-badge{display:inline-block;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-bottom:16px;letter-spacing:0.06em}
+
+  .section{padding:60px 24px;max-width:800px;margin:0 auto}
+  .section-title{font-size:24px;font-weight:900;margin-bottom:8px;color:#e2e8f0}
+  .section-sub{color:#64748b;font-size:14px;margin-bottom:36px}
+
+  .steps{display:flex;flex-direction:column;gap:24px}
+  .step{display:flex;gap:20px;align-items:flex-start;background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.1);border-radius:16px;padding:24px}
+  .step-num{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#6366f1);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;flex-shrink:0;color:#fff}
+  .step-body h3{font-size:16px;font-weight:700;color:#e2e8f0;margin-bottom:6px}
+  .step-body p{font-size:14px;color:#94a3b8;line-height:1.7}
+  .step-body code{background:rgba(167,139,250,0.12);color:#c4b5fd;padding:2px 7px;border-radius:4px;font-family:monospace;font-size:13px}
+  .step-note{margin-top:10px;padding:10px 14px;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.15);border-radius:8px;font-size:13px;color:#34d399}
+  .step-warn{margin-top:10px;padding:10px 14px;background:rgba(251,146,60,0.06);border:1px solid rgba(251,146,60,0.15);border-radius:8px;font-size:13px;color:#fb923c}
+
+  .features{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:36px}
+  .feature{background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:20px}
+  .feature-icon{font-size:28px;margin-bottom:10px}
+  .feature h4{font-size:14px;font-weight:700;margin-bottom:6px}
+  .feature p{font-size:13px;color:#64748b;line-height:1.6}
+
+  .faq{display:flex;flex-direction:column;gap:14px}
+  .faq-item{background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px}
+  .faq-item h4{font-size:14px;font-weight:700;color:#c4b5fd;margin-bottom:6px}
+  .faq-item p{font-size:13px;color:#94a3b8;line-height:1.7}
+
+  .footer{text-align:center;padding:40px 24px;border-top:1px solid rgba(167,139,250,0.1);font-size:12px;color:#3d2f6b}
+
+  @media(max-width:600px){
+    .step{flex-direction:column;gap:14px}
+    .features{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="logo">
+    <div class="logo-icon">🧬</div>
+    <div class="logo-text">
+      <div class="logo-name">AI BODY LAB</div>
+      <div class="logo-sub">PERSONALIZED COACHING</div>
+    </div>
+  </div>
+  <div class="free-badge">✨ 完全無料で使えます</div>
+  <h1>あなただけの<br/><span class="grad">AIボディコーチ</span></h1>
+  <p>体質・年齢・生活環境・医療情報を踏まえた、本当にパーソナルなダイエット・体型改善コーチ。まず「自分に合った目標」を一緒に見つけます。</p>
+  <a href="APP_URL_HERE" class="cta" target="_blank">🚀 アプリを起動する</a>
+</div>
+
+<!-- Features -->
+<div class="section">
+  <div class="section-title">このアプリでできること</div>
+  <div class="section-sub">ただ体重を落とすだけじゃない。あなたの「ハードウェア」を最大限に活かす。</div>
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">🎯</div>
+      <h4>目標カウンセリング</h4>
+      <p>骨格・人種・年齢から「本当に自分に合った目標体型」を一緒に見つけます。他人の理想を追うのをやめる。</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">💭</div>
+      <h4>メンタルケア</h4>
+      <p>挫折した日、やる気が出ない日、しんどい気持ちを話せます。判断せずに聞いてくれるAIカウンセラー。</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔬</div>
+      <h4>医学的エビデンス</h4>
+      <p>「なんとなく」ではなく、論文・研究データに基づいたアドバイス。あなたの薬・疾患も考慮します。</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🥗</div>
+      <h4>食事・運動設計</h4>
+      <p>調理時間・食費・運動環境の制約を踏まえた現実的なプラン。実行できないプランは意味がない。</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">💾</div>
+      <h4>セーブ＆ロード</h4>
+      <p>会話履歴をJSONファイルで保存。次回読み込めば途中から再開できます。データはあなたのPC内のみ。</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔒</div>
+      <h4>プライバシー安全</h4>
+      <p>入力したデータはブラウザ内のみ。外部サーバーには送信されません。APIキーも手元で管理。</p>
+    </div>
+  </div>
+</div>
+
+<!-- Tutorial -->
+<div class="section" style="border-top:1px solid rgba(167,139,250,0.1)">
+  <div class="section-title">📖 使い方：3ステップ</div>
+  <div class="section-sub">セットアップは10分以内で完了します</div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Anthropic APIキーを無料で取得する</h3>
+        <p>
+          このアプリはAnthropic社のAI（Claude）を使っています。利用にはAPIキーが必要です。<br/><br/>
+          ① <a href="https://console.anthropic.com/login" target="_blank">console.anthropic.com</a> にアクセス<br/>
+          ② 「Sign up」でアカウント作成（メールアドレスだけでOK）<br/>
+          ③ ログイン後、左メニューの「API Keys」をクリック<br/>
+          ④ 「+ Create Key」ボタンを押す<br/>
+          ⑤ 名前を入力して「Create Key」→ 表示されたキーをコピー
+        </p>
+        <div class="step-note">
+          ✅ 新規登録で$5分の無料クレジットがもらえます。1回の会話は約$0.01〜0.03なので、<strong>無料枠だけで数百回</strong>使えます。
+        </div>
+        <div class="step-warn">
+          ⚠️ APIキーは他人に見せないでください。パスワードと同じように扱ってください。
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>アプリにAPIキーを入力してプロフィールを設定する</h3>
+        <p>
+          ① <a href="APP_URL_HERE" target="_blank">アプリを開く</a><br/>
+          ② APIキー入力画面でコピーしたキーを貼り付けて「始める」<br/>
+          ③ プロフィール設定（3ステップ）に答える<br/>
+          &nbsp;&nbsp;• 基本情報（年齢・身長・体重・目標体重）<br/>
+          &nbsp;&nbsp;• 健康・生活状況（持病・服薬・ライフスタイル）<br/>
+          &nbsp;&nbsp;• 目標・理想のイメージ（ここが一番大事！）
+        </p>
+        <div class="step-note">
+          💡 「目標体型のイメージ」は正直に入力してください。AIがあなたの骨格・体質に合った現実的な目標を一緒に考えます。
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>まず「目標カウンセリング」から始める</h3>
+        <p>
+          コーチング画面が開いたら、まず <strong style="color:#a78bfa">🎯 目標カウンセリング</strong> を選んでください。<br/><br/>
+          「体重を落とす」だけが目標ではありません。<br/>
+          あなたの体型・骨格・年齢・人種に合った<strong>本当の目標</strong>を見つけることが、長続きするダイエットの出発点です。<br/><br/>
+          カウンセリングが終わったら、食事設計・運動設計・週次レビューと進んでいきましょう。
+        </p>
+        <div class="step-note">
+          💾 右上の「💾 データ」→「エクスポート」で会話を保存できます。次回「インポート」で再開できます。
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ -->
+<div class="section" style="border-top:1px solid rgba(167,139,250,0.1)">
+  <div class="section-title">よくある質問</div>
+  <div class="section-sub"></div>
+  <div class="faq">
+    <div class="faq-item">
+      <h4>Q. 本当に無料で使えますか？</h4>
+      <p>Anthropicの新規登録で$5分の無料クレジットがもらえます。このアプリ自体は無料です。無料クレジットを使い切った後は、Anthropicのサイトから少額チャージ（$5〜）が必要になりますが、数ヶ月は無料枠で十分使えます。</p>
+    </div>
+    <div class="faq-item">
+      <h4>Q. 個人情報は安全ですか？</h4>
+      <p>入力したプロフィール・会話データはすべてあなたのブラウザ（ローカルストレージ）に保存されます。このアプリの開発者（チャンネル運営者）には一切送信されません。AIに送信されるのはAnthropicのAPIを通じてのみです（Anthropicのプライバシーポリシーが適用されます）。</p>
+    </div>
+    <div class="faq-item">
+      <h4>Q. 医療アドバイスとして使えますか？</h4>
+      <p>このアプリは医療行為ではありません。医学的エビデンスに基づいたフィットネス・栄養コーチングです。持病や服薬がある方は、必ず担当医師の指示に従ってください。このアプリのアドバイスが医師の指示と異なる場合は、医師の判断を優先してください。</p>
+    </div>
+    <div class="faq-item">
+      <h4>Q. スマホでも使えますか？</h4>
+      <p>PCブラウザでの使用を推奨していますが、スマホのブラウザからも使用可能です。</p>
+    </div>
+    <div class="faq-item">
+      <h4>Q. 会話を途中から再開できますか？</h4>
+      <p>右上の「💾 データ」→「エクスポート」でJSONファイルをダウンロードして保存してください。次回アプリを開いたとき「インポート」から読み込むと、会話の続きから始められます。</p>
+    </div>
+  </div>
+</div>
+
+<!-- Final CTA -->
+<div style="text-align:center;padding:60px 24px;background:linear-gradient(160deg,#0c0618,#1a0a36,#0c0618)">
+  <h2 style="font-size:28px;font-weight:900;margin-bottom:12px">さあ、始めましょう</h2>
+  <p style="color:#64748b;margin-bottom:28px;font-size:15px">あなただけの目標を見つけることが、全ての始まりです。</p>
+  <a href="APP_URL_HERE" class="cta" target="_blank">🚀 AI BODY LABを起動する</a>
+  <div style="margin-top:16px;font-size:12px;color:#3d2f6b">完全無料 · プライバシー保護 · 医学的エビデンス準拠</div>
+</div>
+
+<div class="footer">
+  © AI BODY LAB · ビリデブみよ<br/>
+  医療行為ではありません。医学的エビデンスに基づくフィットネス・栄養コーチングサービスです。
+</div>
+
+</body>
+</html>

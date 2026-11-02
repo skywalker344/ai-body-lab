@@ -140,6 +140,9 @@ def think(brain, body, heard: str) -> Reply:
             result["reply"] = brain.reply(heard)
         except Exception as e:  # ネット切断など。止まらずに悲しい音で知らせる
             print(f"  [エラー] {type(e).__name__}: {e}", file=sys.stderr)
+            if type(e).__name__ == "AuthenticationError":
+                print("  → APIキーが正しくありません。export ANTHROPIC_API_KEY=... を確認し、"
+                      "ANTHROPIC_AUTH_TOKEN が残っていれば unset してください", file=sys.stderr)
             result["reply"] = Reply("通信がうまくいかない…", "sad", "sad", "short", 0, "red")
 
     worker = threading.Thread(target=ask, daemon=True)

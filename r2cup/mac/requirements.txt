@@ -1,1 +1,5 @@
 numpy
+anthropic>=2.3
+sounddevice
+mlx-whisper   # Apple Silicon Mac 用
+pyserial      # マイコン接続時のみ

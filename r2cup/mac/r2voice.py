@@ -267,7 +267,7 @@ _MOOD = {
 }
 
 
-def talk(text: str, mood: str = "neutral") -> np.ndarray:
+def talk(text: str, mood: str = "neutral", syllables: int | None = None) -> np.ndarray:
     """テキストに合わせた「おしゃべり」。同じ文は毎回同じ音になる。
 
     長さは文字数に比例（上限あり）、疑問文は語尾上がり、！で語尾に跳ね。
@@ -276,7 +276,8 @@ def talk(text: str, mood: str = "neutral") -> np.ndarray:
     seed = int(hashlib.md5(f"{mood}:{text}".encode()).hexdigest()[:8], 16)
     rng = random.Random(seed)
     stripped = text.strip()
-    syllables = int(np.clip(len(stripped) * 0.45, 4, 26))
+    if syllables is None:
+        syllables = int(np.clip(len(stripped) * 0.45, 4, 26))
     parts: list[np.ndarray] = []
     # 文を2〜3フレーズに分け、間に短いポーズを入れて「文っぽさ」を出す
     phrases = 1 + min(2, syllables // 8)
@@ -329,12 +330,16 @@ def save_wav(x: np.ndarray, path: str | Path) -> Path:
     return path
 
 
-def play(x: np.ndarray) -> None:
+def play_async(x: np.ndarray) -> subprocess.Popen:
+    """バックグラウンドで再生を始める。止めるときは .terminate()。"""
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
         save_wav(x, f.name)
     player = ["afplay"] if sys.platform == "darwin" else ["aplay", "-q"]
-    subprocess.run(player + [f.name], check=False)
-    Path(f.name).unlink(missing_ok=True)
+    return subprocess.Popen(player + [f.name])
+
+
+def play(x: np.ndarray) -> None:
+    play_async(x).wait()
 
 
 DEMO_TALK = [

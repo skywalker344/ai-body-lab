@@ -38,15 +38,28 @@ X-wingのソケットに収まっているイメージ。話しかけるとClaud
 ## 進める順番
 1. Mac側：音声入力 → Claude API → 音声出力の会話ループを作る
    - [x] ビープ音合成（`mac/r2voice.py`）
-   - [ ] 録音 → Whisper → Claude → 再生 のループ
+   - [x] 録音 → Whisper → Claude → ビープ音＋首振り／LED命令 のループ（`mac/r2cup.py`）
+   - [ ] 実機（Mac）で動作確認・反応のチューニング
 2. マイコン側：シリアル通信でサーボとLEDを動かす
 3. 連携：返答に合わせて首振り・LEDを動かす
 4. 外装：ドームのくり抜き加工（サーボ接続部の追加）とカップの設計・印刷
 5. 組み込み・調整
 
-## 未決定
-- しゃべり方：言葉で話す／ビープ音＋画面に翻訳表示／ビープ音のあと翻訳音声
-- キャラクター設定（性格・口調）
+## 決定事項
+- しゃべり方：日本語は一切話さない。字幕も出さない。会話の文脈を把握して、返答として合いそうなビープ音を鳴らす
+- キャラクター：好奇心旺盛で少し生意気、でも持ち主に忠実な相棒
+
+## Mac側の使い方
+```
+cd r2cup/mac
+pip install -r requirements.txt
+export ANTHROPIC_API_KEY=...
+python r2cup.py --text --fake --debug   # まずAPIなし・キーボードで動作確認
+python r2cup.py --text --debug          # Claudeとキーボードで会話
+python r2cup.py --debug                 # マイクで会話（--ptt で Enter を押して話す）
+```
+- Claude は返事として「心の声（音には出さない）・最初の鳴き声・おしゃべりの雰囲気と長さ・首の角度・LED」を返す
+- マイコンへの命令（`--port` 指定時）：`HEAD <-90〜90>` / `LED CALM|BLINK|FAST|RED|RAINBOW|OFF`
 
 ## 注意点
 - 映画のR2効果音は使わない（著作権の申し立て対策）。ビープ音は自作する

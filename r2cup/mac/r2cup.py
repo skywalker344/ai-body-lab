@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import threading
 import time
 
 import numpy as np
@@ -122,6 +123,35 @@ class Ears:
         return text
 
 
+# ---------------------------------------------------------------- 考える
+
+THINKING_DELAY = 1.0  # この秒数を過ぎても返事がなければ「考え中」の音を鳴らす
+
+
+def think(brain, heard: str) -> Reply:
+    """Claude に問い合わせる。遅いときだけ考え中の音を（返事が来るまで繰り返し）鳴らす。"""
+    result: dict = {}
+
+    def ask():
+        try:
+            result["reply"] = brain.reply(heard)
+        except Exception as e:  # ネット切断など。止まらずに悲しい音で知らせる
+            print(f"  [エラー] {type(e).__name__}: {e}", file=sys.stderr)
+            result["reply"] = Reply("通信がうまくいかない…", "sad", "sad", "short", 0, "red")
+
+    worker = threading.Thread(target=ask, daemon=True)
+    worker.start()
+    worker.join(THINKING_DELAY)
+    sound = None
+    while worker.is_alive():
+        if sound is None or sound.poll() is not None:
+            sound = r2voice.play_async(r2voice.render("thinking"))
+        worker.join(0.05)
+    if sound is not None:
+        sound.terminate()
+    return result["reply"]
+
+
 # ---------------------------------------------------------------- メイン
 
 def main() -> None:
@@ -157,16 +187,10 @@ def main() -> None:
                 if not heard:
                     continue
 
-            # 考えている間は「考え中」の音を鳴らして首をかしげる
+            # 考えている間はLEDを点滅。返事が遅いときだけ「考え中」の音を鳴らす
             body.send("LED BLINK")
-            thinking = r2voice.play_async(r2voice.render("thinking"))
             t0 = time.time()
-            try:
-                reply = brain.reply(heard)
-            except Exception as e:  # ネット切断など。止まらずに不満の音で知らせる
-                print(f"  [エラー] {type(e).__name__}: {e}", file=sys.stderr)
-                reply = Reply("通信がうまくいかない…", "sad", "sad", "short", 0, "red")
-            thinking.terminate()
+            reply = think(brain, heard)
 
             if a.debug:
                 print(f"  [R2の心の声] {reply.meaning}  ({time.time() - t0:.1f}秒)")

@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 import r2voice
 
-MODEL = "claude-opus-5-5"
+MODELS = {"opus": "claude-opus-5-5", "haiku": "claude-haiku-5-5"}
 MAX_TURNS = 60  # これを超えたら会話を新しく始める（古いターンを途中で削らない）
 
 REACTIONS = ["none", *r2voice.EMOTIONS]
@@ -88,19 +88,24 @@ FALLBACK_CONFUSED = Reply("…よくわからなかった", "curious", "curious"
 
 
 class Brain:
-    def __init__(self, effort: str = "low"):
+    def __init__(self, effort: str = "low", model: str = "opus"):
         import anthropic  # API を使うときだけ読み込む
 
         self.client = anthropic.Anthropic()
         self.effort = effort
+        self.model = MODELS[model]
         self.messages: list = []
 
     def reply(self, heard: str) -> Reply:
         if len(self.messages) >= MAX_TURNS * 2:
             self.messages = []  # 長くなったら新しい会話として始め直す
         self.messages.append({"role": "user", "content": heard})
+        extra = {}
+        if self.model == MODELS["opus"]:
+            # 安全分類器が誤って断ったときは推奨モデルで自動再実行（Haikuは非対応）
+            extra = {"betas": ["server-side-fallback-2026-07-01"], "fallbacks": "default"}
         response = self.client.beta.messages.create(
-            model=MODEL,
+            model=self.model,
             max_tokens=2000,
             system=SYSTEM_PROMPT,
             messages=self.messages,
@@ -108,9 +113,7 @@ class Brain:
                 "effort": self.effort,
                 "format": {"type": "json_schema", "schema": SCHEMA},
             },
-            # 安全分類器が誤って断ったときは推奨モデルで自動再実行
-            betas=["server-side-fallback-2026-07-01"],
-            fallbacks="default",
+            **extra,
         )
         # 思考ブロックも含めてそのまま履歴に積む（途中を書き換えない）
         self.messages.append({"role": "assistant", "content": response.content})

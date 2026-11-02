@@ -10,6 +10,7 @@
   python r2cup.py --text --fake   # APIも使わずに動作確認
   python r2cup.py --port /dev/cu.usbmodem1101   # マイコンにも命令を送る
   python r2cup.py --debug         # R2が心の中で言っていること等を表示
+  python r2cup.py --model haiku   # 速いモデルで返事（標準は opus）
 
 必要: export ANTHROPIC_API_KEY=...
 """
@@ -160,11 +161,13 @@ def main() -> None:
     ap.add_argument("--ptt", action="store_true", help="Enter を押してから話す")
     ap.add_argument("--fake", action="store_true", help="Claude API を使わずダミー応答")
     ap.add_argument("--port", help="マイコンのシリアルポート")
+    ap.add_argument("--model", default="opus", choices=["opus", "haiku"],
+                    help="opus=文脈の読みが深い / haiku=返事が速い")
     ap.add_argument("--effort", default="low", choices=["low", "medium", "high"])
     ap.add_argument("--debug", action="store_true")
     a = ap.parse_args()
 
-    brain = FakeBrain() if a.fake else Brain(effort=a.effort)
+    brain = FakeBrain() if a.fake else Brain(effort=a.effort, model=a.model)
     body = Body(a.port, a.debug)
     ears = None if a.text else Ears(a.ptt)
 

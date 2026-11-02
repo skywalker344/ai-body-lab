@@ -52,7 +52,10 @@ X-wingのソケットに収まっているイメージ。話しかけるとClaud
 ## Mac側の使い方
 ```
 cd r2cup/mac
-pip install -r requirements.txt
+# macOS標準のPython 3.9では動かない（anthropic SDKは3.10以上）。uvで3.12を使う
+curl -LsSf https://astral.sh/uv/install.sh | sh   # 初回のみ
+uv venv --python 3.12 && source .venv/bin/activate
+uv pip install -r requirements.txt
 export ANTHROPIC_API_KEY=...
 python r2cup.py --text --fake --debug   # まずAPIなし・キーボードで動作確認
 python r2cup.py --text --debug          # Claudeとキーボードで会話

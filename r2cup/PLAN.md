@@ -61,6 +61,8 @@ python r2cup.py --text --fake --debug   # まずAPIなし・キーボードで�
 python r2cup.py --text --debug          # Claudeとキーボードで会話
 python r2cup.py --debug                 # マイクで会話（--ptt で Enter を押して話す）
 ```
+- 返事用モデルは標準で Haiku 5.5（約2.5秒）。`--model opus` で文脈の読みが深い Opus 5.5（3〜5秒）
+- 返事を待つ間は音を鳴らさず、LEDを点滅させて首を左右にきょろきょろ動かす
 - Claude は返事として「心の声（音には出さない）・最初の鳴き声・おしゃべりの雰囲気と長さ・首の角度・LED」を返す
 - マイコンへの命令（`--port` 指定時）：`HEAD <-90〜90>` / `LED CALM|BLINK|FAST|RED|RAINBOW|OFF`
 

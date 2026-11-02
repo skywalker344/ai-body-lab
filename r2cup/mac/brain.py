@@ -88,7 +88,7 @@ FALLBACK_CONFUSED = Reply("…よくわからなかった", "curious", "curious"
 
 
 class Brain:
-    def __init__(self, effort: str = "low", model: str = "opus"):
+    def __init__(self, effort: str = "low", model: str = "haiku"):
         import anthropic  # API を使うときだけ読み込む
 
         self.client = anthropic.Anthropic()

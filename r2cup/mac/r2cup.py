@@ -10,7 +10,7 @@
   python r2cup.py --text --fake   # APIも使わずに動作確認
   python r2cup.py --port /dev/cu.usbmodem1101   # マイコンにも命令を送る
   python r2cup.py --debug         # R2が心の中で言っていること等を表示
-  python r2cup.py --model haiku   # 速いモデルで返事（標準は opus）
+  python r2cup.py --model opus    # 文脈の読みが深いモデル（標準は速い haiku）
 
 必要: export ANTHROPIC_API_KEY=...
 """
@@ -126,11 +126,13 @@ class Ears:
 
 # ---------------------------------------------------------------- 考える
 
-THINKING_DELAY = 1.0  # この秒数を過ぎても返事がなければ「考え中」の音を鳴らす
+# 考えている間の首の動き（左右にゆっくりきょろきょろ）。音は鳴らさない
+THINKING_LOOK = [20, -15, 10, -20]
+THINKING_STEP = 0.7  # 秒
 
 
-def think(brain, heard: str) -> Reply:
-    """Claude に問い合わせる。遅いときだけ考え中の音を（返事が来るまで繰り返し）鳴らす。"""
+def think(brain, body, heard: str) -> Reply:
+    """Claude に問い合わせる。待っている間はLEDを点滅させ、首をきょろきょろ動かす。"""
     result: dict = {}
 
     def ask():
@@ -142,14 +144,12 @@ def think(brain, heard: str) -> Reply:
 
     worker = threading.Thread(target=ask, daemon=True)
     worker.start()
-    worker.join(THINKING_DELAY)
-    sound = None
+    body.send("LED BLINK")
+    i = 0
     while worker.is_alive():
-        if sound is None or sound.poll() is not None:
-            sound = r2voice.play_async(r2voice.render("thinking"))
-        worker.join(0.05)
-    if sound is not None:
-        sound.terminate()
+        body.send(f"HEAD {THINKING_LOOK[i % len(THINKING_LOOK)]}")
+        i += 1
+        worker.join(THINKING_STEP)
     return result["reply"]
 
 
@@ -161,7 +161,7 @@ def main() -> None:
     ap.add_argument("--ptt", action="store_true", help="Enter を押してから話す")
     ap.add_argument("--fake", action="store_true", help="Claude API を使わずダミー応答")
     ap.add_argument("--port", help="マイコンのシリアルポート")
-    ap.add_argument("--model", default="opus", choices=["opus", "haiku"],
+    ap.add_argument("--model", default="haiku", choices=["opus", "haiku"],
                     help="opus=文脈の読みが深い / haiku=返事が速い")
     ap.add_argument("--effort", default="low", choices=["low", "medium", "high"])
     ap.add_argument("--debug", action="store_true")
@@ -190,10 +190,8 @@ def main() -> None:
                 if not heard:
                     continue
 
-            # 考えている間はLEDを点滅。返事が遅いときだけ「考え中」の音を鳴らす
-            body.send("LED BLINK")
             t0 = time.time()
-            reply = think(brain, heard)
+            reply = think(brain, body, heard)
 
             if a.debug:
                 print(f"  [R2の心の声] {reply.meaning}  ({time.time() - t0:.1f}秒)")

@@ -1,0 +1,521 @@
+<title>R2カップ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: one narrow column — the droid in its cup on top, the conversation log, a pinned input bar. */
+:root {
+  --bg: #eef1f5;
+  --panel: #ffffff;
+  --ink: #18202c;
+  --muted: #5d6878;
+  --line: #d5dbe4;
+  --r2blue: #1d4f9c;
+  --r2blue-soft: #dbe6f7;
+  --dome: #c9d0d9;
+  --dome-hi: #f4f6f9;
+  --dome-lo: #8e98a6;
+  --cup: #fbfaf7;
+  --cup-shade: #d9d6cf;
+  --me: #1d4f9c;
+  --me-ink: #ffffff;
+  --warn: #b3261e;
+  --font-display: "Chakra Petch", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141b; --panel: #18202b; --ink: #e8edf4; --muted: #9aa6b6; --line: #2a3442;
+    --r2blue: #5b8fe0; --r2blue-soft: #1c2c46; --dome: #aeb7c3; --dome-hi: #e9edf2; --dome-lo: #6f7a88;
+    --cup: #e9e6df; --cup-shade: #b9b5ac; --me: #3f73c7; --me-ink: #ffffff; --warn: #ff8a80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141b; --panel: #18202b; --ink: #e8edf4; --muted: #9aa6b6; --line: #2a3442;
+  --r2blue: #5b8fe0; --r2blue-soft: #1c2c46; --dome: #aeb7c3; --dome-hi: #e9edf2; --dome-lo: #6f7a88;
+  --cup: #e9e6df; --cup-shade: #b9b5ac; --me: #3f73c7; --me-ink: #ffffff; --warn: #ff8a80;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px;
+  display: flex; flex-direction: column;
+}
+.wrap {
+  box-sizing: border-box; width: 100%; max-width: 560px; margin: 0 auto; flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 0;
+}
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 20px; letter-spacing: .06em; margin: 0; }
+h1 small { font-family: var(--font-body); font-weight: 500; font-size: 12px; color: var(--muted); letter-spacing: 0; margin-left: 8px; }
+.toggle { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; user-select: none; }
+.toggle input { accent-color: var(--r2blue); }
+
+.stage { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-block: 4px 6px; }
+.stage svg { width: min(220px, 56vw); height: auto; max-width: 100%; overflow: visible; }
+.status {
+  font-family: var(--font-display); font-size: 13px; letter-spacing: .08em; color: var(--muted);
+  min-height: 1.4em; text-align: center;
+}
+.status.err { color: var(--warn); font-family: var(--font-body); letter-spacing: 0; }
+
+#face { transition: transform .45s cubic-bezier(.3,.7,.3,1); }
+.thinking #face { animation: sway 2.6s ease-in-out infinite; transition: none; }
+@keyframes sway {
+  0%,100% { transform: translateX(14px); } 25% { transform: translateX(-11px); }
+  50% { transform: translateX(7px); } 75% { transform: translateX(-14px); }
+}
+
+.log {
+  flex: 1; min-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+  padding-block: 8px 12px; border-top: 1px solid var(--line);
+}
+.msg { max-width: 84%; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.msg.me { align-self: flex-end; align-items: flex-end; }
+.bubble { padding: 8px 12px; border-radius: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.me .bubble { background: var(--me); color: var(--me-ink); border-bottom-right-radius: 4px; }
+.r2 .bubble {
+  background: var(--panel); border: 1px solid var(--line); border-bottom-left-radius: 4px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+}
+.chip {
+  font-family: var(--font-display); font-size: 12px; letter-spacing: .04em;
+  padding: 2px 8px; border-radius: 999px; background: var(--r2blue-soft); color: var(--r2blue);
+}
+.replay { border: 0; background: none; color: var(--r2blue); font-size: 13px; cursor: pointer; padding: 2px 4px; font-family: var(--font-body); }
+.thought { font-size: 13px; color: var(--muted); padding-left: 4px; }
+.empty { color: var(--muted); font-size: 13px; line-height: 1.7; text-align: center; margin: auto 0; padding: 8px; }
+
+details.board { border-top: 1px solid var(--line); padding-block: 8px; }
+details.board summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+.pads { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+.pads button {
+  font-family: var(--font-body); font-size: 12px; padding: 8px 2px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer;
+}
+.pads button:active { background: var(--r2blue-soft); }
+
+form.bar {
+  position: sticky; bottom: 0; display: flex; gap: 8px; align-items: center;
+  padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg); border-top: 1px solid var(--line);
+}
+form.bar input {
+  flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 10px 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+form.bar button {
+  font-family: var(--font-display); font-weight: 600; letter-spacing: .06em; font-size: 14px;
+  padding: 10px 18px; border-radius: 999px; border: 0; background: var(--r2blue); color: #fff; cursor: pointer;
+}
+form.bar button:disabled { opacity: .5; cursor: default; }
+:focus-visible { outline: 2px solid var(--r2blue); outline-offset: 2px; }
+.hint { font-size: 12px; color: var(--muted); text-align: center; padding-bottom: 4px; }
+@media (prefers-reduced-motion: reduce) {
+  .thinking #face { animation: none; }
+  #face { transition: none; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>R2カップ<small>スマホ試作</small></h1>
+    <label class="toggle"><input type="checkbox" id="showThought">心の声</label>
+  </header>
+
+  <div class="stage" id="stage">
+    <svg viewBox="0 0 220 200" role="img" aria-label="コーヒーカップから顔を出すR2のドーム">
+      <defs>
+        <radialGradient id="domeG" cx="38%" cy="30%" r="80%">
+          <stop offset="0" stop-color="var(--dome-hi)"/>
+          <stop offset=".55" stop-color="var(--dome)"/>
+          <stop offset="1" stop-color="var(--dome-lo)"/>
+        </radialGradient>
+        <linearGradient id="cupG" x1="0" x2="1">
+          <stop offset="0" stop-color="var(--cup-shade)"/>
+          <stop offset=".35" stop-color="var(--cup)"/>
+          <stop offset=".8" stop-color="var(--cup)"/>
+          <stop offset="1" stop-color="var(--cup-shade)"/>
+        </linearGradient>
+        <clipPath id="domeClip"><path d="M30 112 A80 80 0 0 1 190 112 Z"/></clipPath>
+      </defs>
+      <!-- dome -->
+      <path d="M30 112 A80 80 0 0 1 190 112 Z" fill="url(#domeG)"/>
+      <g clip-path="url(#domeClip)">
+        <g id="face">
+          <!-- panel band -->
+          <rect x="-40" y="86" width="300" height="9" fill="var(--r2blue)"/>
+          <rect x="62" y="44" width="22" height="34" rx="2" fill="var(--r2blue)"/>
+          <rect x="136" y="44" width="22" height="34" rx="2" fill="var(--r2blue)"/>
+          <rect x="93" y="28" width="34" height="12" rx="2" fill="var(--r2blue)"/>
+          <!-- radar eye -->
+          <circle cx="110" cy="62" r="13" fill="#11151b"/>
+          <circle cx="106" cy="58" r="4" fill="#3b4a5e"/>
+          <circle cx="114" cy="66" r="1.6" fill="#7d8ea6"/>
+          <!-- logic lights: 7-LED cluster -->
+          <circle cx="147" cy="61" r="12" fill="#11151b"/>
+          <g id="leds"></g>
+          <!-- holo projector -->
+          <circle cx="73" cy="61" r="6" fill="#d9dee5" stroke="#6f7a88" stroke-width="1.5"/>
+          <circle cx="73" cy="61" r="2.4" fill="#11151b"/>
+        </g>
+      </g>
+      <!-- cup -->
+      <path d="M187 120 C222 120 222 168 182 166" fill="none" stroke="var(--cup-shade)" stroke-width="11" stroke-linecap="round"/>
+      <path d="M187 120 C215 121 215 164 182 162" fill="none" stroke="var(--cup)" stroke-width="7" stroke-linecap="round"/>
+      <path d="M24 108 L196 108 L184 182 Q182 192 170 192 L50 192 Q38 192 36 182 Z" fill="url(#cupG)"/>
+      <ellipse cx="110" cy="109" rx="86" ry="7" fill="var(--cup-shade)"/>
+      <rect x="28" y="106" width="164" height="7" rx="3.5" fill="var(--r2blue)"/>
+    </svg>
+    <div class="status" id="status" aria-live="polite">TAP 送信 TO TALK</div>
+  </div>
+
+  <div class="log" id="log">
+    <p class="empty" id="empty">R2に話しかけてみてください。<br>キーボードのマイクボタンで声でも入力できます。<br>返事は言葉ではなく、ビープ音と首振りとライトです。</p>
+  </div>
+
+  <details class="board">
+    <summary>鳴き声だけ試す（12種）</summary>
+    <div class="pads" id="pads"></div>
+  </details>
+
+  <form class="bar" id="bar">
+    <input id="say" type="text" autocomplete="off" enterkeyhint="send" placeholder="R2に話しかける" aria-label="R2に話しかける">
+    <button id="send" type="submit">送信</button>
+  </form>
+</div>
+
+<script>
+/* ============================== ビープ音シンセ（r2voice.py の移植） ============================== */
+const SR = 44100;
+const N = s => Math.max(1, Math.floor(s * SR));
+
+function env(n, a = .006, r = .025) {
+  const A = Math.min(N(a), n >> 1), R = Math.min(N(r), n - A), e = new Float32Array(n).fill(1);
+  for (let i = 0; i < A; i++) e[i] = Math.pow(i / A, 1.5);
+  for (let i = 0; i < R; i++) e[n - 1 - i] = Math.pow(i / R, 1.5);
+  return e;
+}
+function osc(freq, bright = .18) {
+  const out = new Float32Array(freq.length); let ph = 0;
+  for (let i = 0; i < freq.length; i++) {
+    ph += 2 * Math.PI * freq[i] / SR;
+    out[i] = Math.sin(ph) + bright * Math.sin(2 * ph) + .4 * bright * Math.sin(3 * ph);
+  }
+  return out;
+}
+const CURVES = {
+  lin: t => t, out: t => 1 - Math.pow(1 - t, 3), in: t => t * t * t,
+  arc: t => Math.sin(Math.PI * t), s: t => .5 - .5 * Math.cos(Math.PI * t),
+};
+function whistle(f0, f1, dur, shape = "s", o = {}) {
+  const { vibRate = 0, vibDepth = 0, scoop = 0, amp = 1, bright = .18 } = o;
+  const n = N(dur), f = new Float32Array(n), c = CURVES[shape];
+  for (let i = 0; i < n; i++) {
+    let v = f0 * Math.pow(f1 / f0, c(n > 1 ? i / (n - 1) : 0));
+    if (scoop) v *= 1 - scoop * Math.exp(-i / (.018 * SR));
+    if (vibDepth) v *= 1 + vibDepth * Math.sin(2 * Math.PI * vibRate * i / SR);
+    f[i] = v;
+  }
+  return mul(osc(f, bright), env(n), amp);
+}
+const blip = (f, dur = .045, amp = .9, scoop = .12) => whistle(f, f, dur, "lin", { scoop, amp });
+function trill(fa, fb, dur, rate = 18, glide = 0, amp = .9) {
+  const n = N(dur), f = new Float32Array(n), mid = Math.sqrt(fa * fb), T = (n - 1) / SR || 1;
+  for (let i = 0; i < n; i++) {
+    const t = i / SR, sq = Math.tanh(6 * Math.sin(2 * Math.PI * rate * t));
+    f[i] = mid * Math.pow(fb / fa, .5 * sq) * (glide ? Math.pow(1 + glide, t / T) : 1);
+  }
+  return mul(osc(f), env(n), amp);
+}
+function warble(fc, dur, rate = 28, depth = .25, drift = 1, amp = .85) {
+  const n = N(dur), f = new Float32Array(n), T = (n - 1) / SR || 1;
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    f[i] = fc * Math.pow(drift, t / T) * (1 + depth * Math.sin(2 * Math.PI * rate * t));
+  }
+  return mul(osc(f, .12), env(n, .01, .04), amp);
+}
+function raspberry(dur = .55, f0 = 110, amp = .75) {
+  const n = N(dur), raw = new Float32Array(n), T = (n - 1) / SR || 1; let ph = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / SR;
+    ph += 2 * Math.PI * f0 * (1 + .06 * Math.sin(2 * Math.PI * 7 * t)) * Math.pow(.85, t / T) / SR;
+    let saw = 0; for (let k = 1; k < 14; k++) saw += Math.sin(k * ph) / k;
+    raw[i] = saw * (.6 + .4 * Math.sign(Math.sin(2 * Math.PI * 31 * t)));
+  }
+  const sm = new Float32Array(n); let peak = 1e-9;
+  for (let i = 0; i < n; i++) {
+    let s = 0, c = 0;
+    for (let k = -3; k < 3; k++) { const j = i + k; if (j >= 0 && j < n) { s += raw[j]; c++; } }
+    sm[i] = s / 6; peak = Math.max(peak, Math.abs(sm[i]));
+  }
+  const e = env(n, .02, .08);
+  for (let i = 0; i < n; i++) sm[i] = amp * sm[i] / peak * e[i];
+  return sm;
+}
+function scream(dur = 1.5, amp = 1) {
+  const n = N(dur), f = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1), s = i / SR;
+    f[i] = 3400 * Math.pow(380 / 3400, Math.pow(t, 1.4)) * (1 + (.01 + .07 * t) * Math.sin(2 * Math.PI * (9 + 5 * t) * s));
+  }
+  return seq([whistle(1800, 3600, .09, "out", { amp }), mul(osc(f, .22), env(n, .005, .15), amp)]);
+}
+function mul(x, e, amp = 1) { for (let i = 0; i < x.length; i++) x[i] *= e[i] * amp; return x; }
+const gap = s => new Float32Array(N(s));
+function seq(parts) {
+  const flat = parts.flat(), out = new Float32Array(flat.reduce((a, p) => a + p.length, 0));
+  let o = 0; for (const p of flat) { out.set(p, o); o += p.length; } return out;
+}
+function finish(x, peak = .85) {
+  let m = 1e-9; for (const v of x) m = Math.max(m, Math.abs(v));
+  const pad = N(.04), out = new Float32Array(x.length + 2 * pad);
+  for (let i = 0; i < x.length; i++) out[pad + i] = x[i] / m * peak;
+  return out;
+}
+function mkRng(seed) {
+  let a = seed >>> 0;
+  const r = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  r.uniform = (lo, hi) => lo + (hi - lo) * r();
+  r.choice = arr => arr[Math.floor(r() * arr.length)];
+  return r;
+}
+function chatter(rng, count, lo = 1400, hi = 4200, speed = 1) {
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    const f = rng.uniform(lo, hi), d = rng.uniform(.028, .065) / speed, k = rng();
+    if (k < .55) out.push(blip(f, d, rng.uniform(.6, .95)));
+    else if (k < .85) out.push(whistle(f, f * rng.choice([.6, .75, 1.3, 1.6]), d * 1.6, rng.choice(["out", "in", "s"]), { amp: rng.uniform(.6, .9) }));
+    else out.push(trill(f, f * 1.25, d * 2.2, rng.uniform(22, 34), 0, .7));
+    out.push(gap(rng.uniform(.008, .035) / speed));
+  }
+  return out;
+}
+
+const EMOTIONS = {
+  hello:     ["あいさつ", r => seq([whistle(1500, 2600, .12, "out", { scoop: .1 }), gap(.04), blip(2100, .05), gap(.02), blip(2700, .05), gap(.05), whistle(1700, 3300, .22, "in", { vibRate: 11, vibDepth: .02 })])],
+  happy:     ["うれしい", r => seq([blip(1800, .05), gap(.02), blip(2300, .05), gap(.02), blip(2900, .05), gap(.04), trill(2400, 3100, .28, 20, .15), gap(.05), chatter(r, 4, 2000, 3800, 1.2), whistle(2200, 3600, .18, "in")])],
+  excited:   ["興奮", r => seq([chatter(r, 9, 1800, 4400, 1.5), trill(2600, 3500, .32, 26, .2), gap(.03), whistle(1500, 3900, .25, "in", { vibRate: 14, vibDepth: .03 }), gap(.03), blip(3600, .04), gap(.02), blip(3900, .04)])],
+  sad:       ["悲しい", r => seq([whistle(1500, 900, .45, "s", { vibRate: 5, vibDepth: .015 }), gap(.12), whistle(1200, 620, .6, "s", { vibRate: 4, vibDepth: .02 }), gap(.1), whistle(820, 480, .55, "in", { vibRate: 3.5, vibDepth: .03, amp: .7 })])],
+  curious:   ["疑問", r => seq([blip(1600, .06), gap(.07), blip(1450, .06), gap(.09), whistle(1300, 2900, .38, "in", { scoop: .05 })])],
+  surprised: ["驚き", r => seq([whistle(500, 3800, .22, "in", { amp: 1, bright: .25 }), gap(.01), whistle(3800, 3000, .12, "out"), gap(.06), trill(2800, 3400, .2, 30)])],
+  annoyed:   ["不満", r => seq([blip(2400, .05), gap(.03), blip(1700, .05), gap(.05), raspberry(.5), gap(.04), whistle(1300, 700, .18, "out")])],
+  thinking:  ["考え中", r => { const p = []; for (let i = 0; i < 6; i++) p.push(blip(1100 + 250 * (i % 2) + r.uniform(-60, 60), .07, .55, .05), gap(r.uniform(.12, .22))); p.push(warble(1500, .35, 9, .06, 1.3, .6)); return seq(p); }],
+  yes:       ["はい", r => seq([blip(1900, .06), gap(.04), whistle(2000, 3000, .12, "in")])],
+  no:        ["いいえ", r => seq([whistle(2600, 1800, .12, "out"), gap(.05), whistle(1900, 1100, .18, "s")])],
+  alarm:     ["警報", r => seq([0, 1, 2].flatMap(() => [trill(2200, 3200, .25, 12), gap(.05)]))],
+  scared:    ["悲鳴", r => scream(1.5)],
+};
+const MOODS = {
+  neutral: { lo: 1300, hi: 3200, speed: 1, end: null, ja: "ふつう" },
+  happy:   { lo: 1800, hi: 3900, speed: 1.25, end: "up", ja: "うれしい" },
+  excited: { lo: 2000, hi: 4400, speed: 1.5, end: "up", ja: "興奮" },
+  sad:     { lo: 600,  hi: 1500, speed: .7, end: "down", ja: "悲しい" },
+  annoyed: { lo: 1000, hi: 2600, speed: 1.1, end: "buzz", ja: "不満" },
+  curious: { lo: 1300, hi: 2900, speed: .95, end: "up", ja: "興味" },
+};
+function hash(s) { let h = 2166136261; for (const c of s) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function talk(text, mood = "neutral", syllables = null) {
+  const m = MOODS[mood] || MOODS.neutral, rng = mkRng(hash(mood + ":" + text)), t = text.trim();
+  if (syllables == null) syllables = Math.min(26, Math.max(4, Math.round(t.length * .45)));
+  const parts = [], phrases = 1 + Math.min(2, Math.floor(syllables / 8)), per = Math.floor(syllables / phrases);
+  for (let p = 0; p < phrases; p++) {
+    const drop = 1 - .08 * p;
+    parts.push(...chatter(rng, per, m.lo * drop, m.hi * drop, m.speed));
+    if (rng() < .5) { const f = rng.uniform(m.lo, m.hi) * drop; parts.push(whistle(f, f * rng.choice([.7, 1.4]), .16 / m.speed, "s", { vibRate: 10, vibDepth: .02 })); }
+    if (p < phrases - 1) parts.push(gap(rng.uniform(.09, .16)));
+  }
+  let end = m.end; if (/[?？]$/.test(t)) end = "up";
+  if (end === "up") { const f = m.lo * 1.1; parts.push(gap(.03), whistle(f, f * 2.1, .26, "in")); }
+  else if (end === "down") { const f = m.hi; parts.push(gap(.05), whistle(f, f * .5, .4, "s", { vibRate: 4, vibDepth: .02 })); }
+  else if (end === "buzz") parts.push(gap(.04), raspberry(.35));
+  if (/[!！]$/.test(t)) parts.push(gap(.02), blip(m.hi, .04), gap(.015), blip(m.hi * 1.12, .04));
+  return seq(parts);
+}
+
+/* ============================== 再生 ============================== */
+let ctx = null, current = null;
+function audio() {
+  if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; ctx = new AC(); }
+  if (ctx.state === "suspended") ctx.resume();
+  return ctx;
+}
+function play(x) {
+  const c = audio();
+  if (current) { try { current.stop(); } catch (_) {} }
+  const buf = c.createBuffer(1, x.length, SR); buf.copyToChannel(x, 0);
+  const src = c.createBufferSource(); src.buffer = buf; src.connect(c.destination); src.start();
+  current = src;
+  return new Promise(res => { src.onended = res; });
+}
+
+/* ============================== 体（画面のドーム） ============================== */
+const stage = document.getElementById("stage"), face = document.getElementById("face"), statusEl = document.getElementById("status");
+const ledsG = document.getElementById("leds"), LEDS = [];
+[[0, 0], ...[0, 1, 2, 3, 4, 5].map(k => [Math.cos(k * Math.PI / 3) * 6.6, Math.sin(k * Math.PI / 3) * 6.6])].forEach(([dx, dy]) => {
+  const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  c.setAttribute("cx", 147 + dx); c.setAttribute("cy", 61 + dy); c.setAttribute("r", 2.7);
+  ledsG.appendChild(c); LEDS.push(c);
+});
+let ledMode = "calm";
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function ledFrame(ts) {
+  const t = ts / 1000;
+  LEDS.forEach((c, i) => {
+    let col = "#22324a";
+    if (ledMode === "calm") { const v = .55 + .45 * Math.sin(t * 1.4 + i); col = `hsl(212 85% ${35 + v * 30}%)`; }
+    else if (ledMode === "blink") col = (Math.floor(t * 2) % 2) ? "#3f8cff" : "#22324a";
+    else if (ledMode === "fast") col = (Math.floor(t * 10 + i * 1.7) % 3) ? "#e8f1ff" : "#3f8cff";
+    else if (ledMode === "red") { const v = .5 + .5 * Math.sin(t * 6); col = `hsl(2 90% ${30 + v * 30}%)`; }
+    else if (ledMode === "rainbow") col = `hsl(${(t * 220 + i * 51) % 360} 90% 58%)`;
+    c.setAttribute("fill", reduceMotion && ledMode !== "off" ? (ledMode === "red" ? "#e0453a" : "#3f8cff") : col);
+  });
+  requestAnimationFrame(ledFrame);
+}
+requestAnimationFrame(ledFrame);
+function setHead(deg) {
+  deg = Math.max(-90, Math.min(90, deg));
+  face.style.transform = `translateX(${Math.sin(deg * Math.PI / 180) * 46}px)`;
+}
+function setStatus(text, err = false) { statusEl.textContent = text; statusEl.classList.toggle("err", err); }
+
+/* ============================== 頭脳（Claude） ============================== */
+const RULES = `あなたは「R2カップ」。持ち主の机の上のコーヒーカップに収まった、小さなアストロメク・ドロイドです。
+持ち主が日本語で話しかけます。あなたは言葉を一切話せず、電子音（ビープ音）と首振りとライトだけで返事をします。
+
+# 性格
+- 好奇心旺盛。新しい話題や物には身を乗り出す（首を向ける・疑問の音）
+- 少し生意気。からかわれたり無茶を言われたら、ブーイングや不満の音で言い返す
+- でも持ち主には忠実な相棒。頼まれごとには基本「はい」、落ち込んでいたら励ます
+
+# 返し方
+会話の流れを覚えておき、文脈に合った反応を選んでください。毎回同じ反応にならないよう、間や強弱に変化をつけます。
+毎回、次の形のJSONオブジェクトを1つだけ返してください。説明文は不要です。
+{"meaning": string, "reaction": string, "talk_mood": string, "talk_length": string, "head": integer, "led": string}
+- meaning: もしR2が言葉を話せたら言っていそうな一言（日本語、40字以内）。音には出ません
+- reaction: 最初に鳴らす感情の鳴き声。none / ${Object.keys(EMOTIONS).join(" / ")}
+- talk_mood: 続けるおしゃべりの雰囲気。${Object.keys(MOODS).join(" / ")}
+- talk_length: おしゃべりの長さ。none / short / medium / long（短い相づちなら none か short）
+- head: 首の向き（度）。-90=左、0=正面、90=右。基本は 0 付近。興味・照れ・そっぽを向く等で動かす
+- led: ロジックライト。calm=通常 / blink=ゆっくり点滅 / fast=高速点滅（興奮・驚き）/ red=警告・不満 / rainbow=大喜び
+例: {"meaning":"おかえり！待ってたよ","reaction":"happy","talk_mood":"happy","talk_length":"short","head":10,"led":"rainbow"}`;
+
+const LENGTHS = { none: 0, short: 5, medium: 11, long: 20 }, LEDMODES = ["calm", "blink", "fast", "red", "rainbow"];
+function normalize(d) {
+  d = d && typeof d === "object" ? d : {};
+  const pick = (v, list, def) => list.includes(v) ? v : def;
+  return {
+    meaning: String(d.meaning || "…").slice(0, 60),
+    reaction: pick(d.reaction, ["none", ...Object.keys(EMOTIONS)], "curious"),
+    talk_mood: pick(d.talk_mood, Object.keys(MOODS), "neutral"),
+    talk_length: pick(d.talk_length, Object.keys(LENGTHS), "short"),
+    head: Math.max(-90, Math.min(90, Math.round(Number(d.head) || 0))),
+    led: pick(d.led, LEDMODES, "calm"),
+  };
+}
+function fakeReply(heard) {
+  const r = mkRng(Date.now()), ks = Object.keys(EMOTIONS);
+  return normalize({ meaning: heard.slice(0, 40), reaction: r.choice(ks), talk_mood: /[?？]$/.test(heard) ? "curious" : r.choice(Object.keys(MOODS)),
+    talk_length: r.choice(["short", "medium", "long"]), head: Math.round(r.uniform(-45, 45)), led: r.choice(LEDMODES) });
+}
+function replySound(rep) {
+  const parts = [];
+  if (rep.reaction !== "none") parts.push(EMOTIONS[rep.reaction][1](mkRng(Date.now())));
+  if (rep.talk_length !== "none") { if (parts.length) parts.push(gap(.12)); parts.push(talk(rep.meaning, rep.talk_mood, LENGTHS[rep.talk_length])); }
+  if (!parts.length) parts.push(EMOTIONS.yes[1](mkRng(1)));
+  return finish(seq(parts));
+}
+
+let sample = null, fakeMode = false;
+const turns = [];
+(async () => {
+  try { sample = window.claude ? await window.claude.use("sample") : null; } catch (_) { sample = null; }
+  if (!sample) { fakeMode = true; setStatus("Claudeにつながらないため、ランダム応答で動きます"); }
+})();
+
+const ERR = {
+  not_granted: "Claudeの利用が許可されなかったので、ランダム応答に切り替えました",
+  sampling_disabled: "このアカウントではClaudeを呼べないので、ランダム応答に切り替えました",
+  rate_limited: "呼び出しが多すぎます。少し待ってからもう一度送ってください",
+  session_expired: "ログインし直してください",
+  refused: "その内容には返事できないみたいです。言い方を変えてみてください",
+};
+async function ask(heard) {
+  if (fakeMode || !sample) { await new Promise(r => setTimeout(r, 700)); return fakeReply(heard); }
+  turns.push({ role: "user", content: heard });
+  while (turns.length > 40) turns.splice(0, 2);
+  try {
+    const data = await sample.json([{ role: "user", content: RULES }, ...turns], { modelTier: "quick", cache: false });
+    const rep = normalize(data);
+    turns.push({ role: "assistant", content: JSON.stringify(rep) });
+    return rep;
+  } catch (e) {
+    turns.pop();
+    const code = e && e.code;
+    if (code === "not_granted" || code === "sampling_disabled" || code === "not_declared" || code === "capability_disabled") fakeMode = true;
+    setStatus(ERR[code] || "通信がうまくいきませんでした。もう一度送ってください", true);
+    return normalize({ meaning: "通信がうまくいかない…", reaction: "sad", talk_mood: "sad", talk_length: "short", head: 0, led: "red" });
+  }
+}
+
+/* ============================== 画面 ============================== */
+const log = document.getElementById("log"), empty = document.getElementById("empty"), showThought = document.getElementById("showThought");
+const form = document.getElementById("bar"), input = document.getElementById("say"), sendBtn = document.getElementById("send");
+try { showThought.checked = localStorage.getItem("r2cup.thought") === "1"; } catch (_) {}
+showThought.addEventListener("change", () => {
+  try { localStorage.setItem("r2cup.thought", showThought.checked ? "1" : "0"); } catch (_) {}
+  log.querySelectorAll(".thought").forEach(el => el.hidden = !showThought.checked);
+});
+function addMe(text) {
+  empty.hidden = true;
+  const m = document.createElement("div"); m.className = "msg me";
+  const b = document.createElement("div"); b.className = "bubble"; b.textContent = text;
+  m.append(b); log.append(m); log.scrollTop = log.scrollHeight;
+}
+function addR2(rep, sound) {
+  const m = document.createElement("div"); m.className = "msg r2";
+  const b = document.createElement("div"); b.className = "bubble";
+  const chips = [];
+  if (rep.reaction !== "none") chips.push(EMOTIONS[rep.reaction][0]);
+  if (rep.talk_length !== "none") chips.push(`おしゃべり・${MOODS[rep.talk_mood].ja}`);
+  chips.push(rep.head === 0 ? "正面" : `${rep.head > 0 ? "右" : "左"}${Math.abs(rep.head)}°`);
+  for (const c of chips) { const s = document.createElement("span"); s.className = "chip"; s.textContent = c; b.append(s); }
+  const rp = document.createElement("button"); rp.className = "replay"; rp.type = "button"; rp.textContent = "▶ もう一度";
+  rp.addEventListener("click", () => perform(rep, sound)); b.append(rp);
+  const th = document.createElement("div"); th.className = "thought"; th.textContent = "心の声：" + rep.meaning; th.hidden = !showThought.checked;
+  m.append(b, th); log.append(m); log.scrollTop = log.scrollHeight;
+}
+async function perform(rep, sound) {
+  setHead(rep.head); ledMode = rep.led;
+  await play(sound);
+}
+form.addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const heard = input.value.trim(); if (!heard) return;
+  audio();                         // スマホは送信ボタンのタップで音を解放する
+  input.value = ""; sendBtn.disabled = true; addMe(heard);
+  stage.classList.add("thinking"); ledMode = "blink"; setStatus("THINKING…");
+  const rep = await ask(heard);
+  stage.classList.remove("thinking");
+  if (!statusEl.classList.contains("err")) setStatus(fakeMode ? "ランダム応答モード" : "");
+  const sound = replySound(rep);
+  addR2(rep, sound);
+  sendBtn.disabled = false;
+  await perform(rep, sound);
+  if (!statusEl.classList.contains("err") && !fakeMode) setStatus("LISTENING");
+  setTimeout(() => statusEl.classList.remove("err"), 4000);
+});
+
+const pads = document.getElementById("pads");
+for (const [key, [ja, fn]] of Object.entries(EMOTIONS)) {
+  const b = document.createElement("button"); b.type = "button"; b.textContent = ja;
+  b.addEventListener("click", () => play(finish(fn(mkRng(Date.now())))));
+  pads.append(b);
+}
+setHead(0);
+</script>

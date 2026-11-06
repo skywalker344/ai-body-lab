@@ -8,7 +8,8 @@
   python r2cup.py --ptt           # Enter を押してから話す
   python r2cup.py --text          # キーボード入力で会話（マイク・Whisper不要）
   python r2cup.py --text --fake   # APIも使わずに動作確認
-  python r2cup.py --port /dev/cu.usbmodem1101   # マイコンにも命令を送る
+  python r2cup.py --port /dev/cu.usbmodem1101   # マイコンにも命令を送る（音も本体から）
+  python r2cup.py --port ... --speaker mac      # 音だけMacから鳴らす
   python r2cup.py --debug         # R2が心の中で言っていること等を表示
   python r2cup.py --model opus    # 文脈の読みが深いモデル（標準は速い haiku）
 
@@ -36,9 +37,14 @@ _HALLUCINATIONS = ("ご視聴ありがとうございました", "チャンネ�
 # ---------------------------------------------------------------- 体（マイコン）
 
 class Body:
-    """マイコンへ1行1命令のテキストを送る。ポート未指定なら表示だけ。"""
+    """マイコンへ1行1命令のテキストを送る。ポート未指定なら表示だけ。
 
-    def __init__(self, port: str | None, debug: bool):
+    speaker="body" なら音もマイコンへ送り、R2本体のスピーカーで鳴らす。
+    """
+
+    BODY_RATE = 22050  # ファームウェア側の I2S サンプルレート
+
+    def __init__(self, port: str | None, debug: bool, speaker: str = "auto"):
         self.ser = None
         self.debug = debug
         if port:
@@ -46,6 +52,7 @@ class Body:
 
             self.ser = serial.Serial(port, 115200, timeout=0.1)
             time.sleep(1.5)  # 接続直後のリセット待ち
+        self.body_speaker = bool(self.ser) and speaker != "mac"
 
     def send(self, line: str) -> None:
         if self.debug or not self.ser:
@@ -56,6 +63,30 @@ class Body:
     def act(self, r: Reply) -> None:
         self.send(f"HEAD {r.head}")
         self.send(f"LED {r.led.upper()}")
+
+    def _readline(self) -> str:
+        line = self.ser.readline().decode(errors="replace").strip()
+        if line and self.debug and not line.startswith("OK"):
+            print(f"  [体から] {line}")
+        return line
+
+    def play(self, x: np.ndarray) -> None:
+        """音を鳴らす。本体スピーカーが使えれば本体で、なければMacで。"""
+        if not self.body_speaker:
+            r2voice.play(x)
+            return
+        # 44.1kHz → 22.05kHz（2サンプルずつ平均）、16bit整数に
+        n = len(x) // 2 * 2
+        y = x[:n].reshape(-1, 2).mean(axis=1)
+        pcm = (np.clip(y, -1, 1) * 32767).astype("<i2").tobytes()
+        self.ser.write(f"AUDIO {len(pcm)}\n".encode())
+        self.ser.write(pcm)
+        deadline = time.time() + len(y) / self.BODY_RATE + 3
+        while time.time() < deadline:
+            line = self._readline()
+            if line == "DONE AUDIO" or line.startswith("ERR AUDIO"):
+                return
+        print("  [体] 音の再生完了の返事がありません", file=sys.stderr)
 
 
 # ---------------------------------------------------------------- 耳
@@ -164,6 +195,9 @@ def main() -> None:
     ap.add_argument("--ptt", action="store_true", help="Enter を押してから話す")
     ap.add_argument("--fake", action="store_true", help="Claude API を使わずダミー応答")
     ap.add_argument("--port", help="マイコンのシリアルポート")
+    ap.add_argument("--speaker", default="auto", choices=["auto", "mac", "body"],
+                    help="音をどこで鳴らすか（auto: --port があれば本体）")
+    ap.add_argument("--home", action="store_true", help="起動時にドームの正面合わせをする")
     ap.add_argument("--model", default="haiku", choices=["opus", "haiku"],
                     help="opus=文脈の読みが深い / haiku=返事が速い")
     ap.add_argument("--effort", default="low", choices=["low", "medium", "high"])
@@ -171,10 +205,12 @@ def main() -> None:
     a = ap.parse_args()
 
     brain = FakeBrain() if a.fake else Brain(effort=a.effort, model=a.model)
-    body = Body(a.port, a.debug)
+    body = Body(a.port, a.debug, a.speaker)
     ears = None if a.text else Ears(a.ptt)
 
-    r2voice.play(r2voice.render("hello"))
+    if a.home:
+        body.send("HOME")
+    body.play(r2voice.render("hello"))
     body.send("LED CALM")
     print("R2カップ起動。終了は Ctrl+C")
 
@@ -200,11 +236,11 @@ def main() -> None:
                 print(f"  [R2の心の声] {reply.meaning}  ({time.time() - t0:.1f}秒)")
                 print(f"  [音] {reply.reaction} → {reply.talk_mood}/{reply.talk_length}")
             body.act(reply)
-            r2voice.play(reply.sound())
+            body.play(reply.sound())
     except (KeyboardInterrupt, EOFError):
         body.send("HEAD 0")
         body.send("LED OFF")
-        r2voice.play(r2voice.render("sad"))
+        body.play(r2voice.render("sad"))
         print("\nまたね")
 
 
